@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "name": "savecoordinates",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Bilal Saglam",
+  "license": "ISC",
+  "description": "",
+  "type": "module"
+}
