@@ -1,29 +1,68 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from 'react'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import { FaTrash, FaDownload, FaSave } from 'react-icons/fa'
+import {
+  useGetCoordinatesQuery,
+  useSetCoordinatesMutation,
+} from '../slices/coordinateApiSlice'
+import { toast } from 'react-toastify'
+
+interface Marker {
+  id: number
+  datetime: string
+  position: [number, number]
+}
 
 const MapWithList = () => {
-  const [center, setCenter] = useState([40.8, 29.43])
-  const [markerList, setMarkerList] = useState([])
-  const [selectedMarker, setSelectedMarker] = useState(null)
+  const [center, setCenter] = useState<[number, number]>([40.8, 29.43])
+  const [markerList, setMarkerList] = useState<Marker[]>([])
+  const [selectedMarker, setSelectedMarker] = useState<[number, number] | null>(
+    null
+  )
+
+  const { data } = useGetCoordinatesQuery({})
+  const [setCoordinates] = useSetCoordinatesMutation()
+
+  useEffect(() => {
+    if (data) {
+      const newMarkers: Marker[] = data.map((datapoint: any) => ({
+        id: datapoint._id,
+        datetime: datapoint.createdAt,
+        position: [datapoint.lat, datapoint.lng],
+      }))
+      setMarkerList(newMarkers)
+    }
+  }, [data])
 
   useEffect(() => {
     // Load saved markers when the component is initialized
-    const savedMarkers = JSON.parse(localStorage.getItem('markers')) || []
+    const savedMarkers =
+      JSON.parse(localStorage.getItem('markers') as string) || []
     setMarkerList(savedMarkers)
   }, [])
 
-  const handleSaveCoordinates = () => {
-    // Add a new marker
-    const newCenter = mapRef.current.getCenter()
-    const newMarker = {
-      id: Date.now(),
-      datetime: new Date().toISOString(),
-      position: [newCenter.lat, newCenter.lng],
+  const handleSaveCoordinates = async () => {
+    try {
+      const newCenter = mapRef.current?.getCenter()
+
+      const newMarker = {
+        id: Date.now(), // Generate a unique ID only if not provided
+        datetime: new Date().toISOString(),
+        position: [newCenter.lat, newCenter.lng],
+      }
+      const updatedMarkers = [...markerList, newMarker]
+      setMarkerList(updatedMarkers as Marker[])
+      localStorage.setItem('markers', JSON.stringify(updatedMarkers))
+      await setCoordinates({
+        lat: newCenter.lat,
+        lng: newCenter.lng,
+        id: newMarker.id,
+      })
+      toast.success('Nokta Kaydedildi')
+    } catch (error: any) {
+      toast.error(error?.data?.message || error.error)
     }
-    const updatedMarkers = [...markerList, newMarker]
-    setMarkerList(updatedMarkers)
-    localStorage.setItem('markers', JSON.stringify(updatedMarkers))
   }
 
   const handleDownloadCoordinates = () => {
@@ -36,15 +75,15 @@ const MapWithList = () => {
     window.URL.revokeObjectURL(anchor.href)
   }
 
-  // Delete a saved position from UI
-  const handleDeleteMarker = (id) => {
+  const handleDeleteMarker = (id: number) => {
+    console.log('Deleting marker with ID:', id)
     const updatedMarkers = markerList.filter((marker) => marker.id !== id)
     setMarkerList(updatedMarkers)
     localStorage.setItem('markers', JSON.stringify(updatedMarkers))
   }
 
   // Show the Marker
-  const handleShowMarker = (position) => {
+  const handleShowMarker = (position: [number, number]) => {
     setSelectedMarker(position)
     setCenter(position)
   }
@@ -91,25 +130,22 @@ const MapWithList = () => {
 
           <ul>
             {markerList.map((marker) => (
-              <>
-                <li
-                  key={marker.id}
-                  className="text-nowrap leading-10 cursor-pointer hover:bg-slate-300 rounded-lg px-4"
-                  onClick={() => handleShowMarker(marker.position)}
+              <li
+                key={marker.id}
+                className="text-nowrap leading-10 cursor-pointer hover:bg-slate-300 rounded-lg px-4"
+                onClick={() => handleShowMarker(marker.position)}
+              >
+                Lat : {marker.position[0].toFixed(5)} , Lng :{' '}
+                {marker.position[1].toFixed(5)}
+                <button
+                  className="ml-8 text-red-500"
+                  onClick={() => handleDeleteMarker(marker.id)}
                 >
-                  Lat : {marker.position[0].toFixed(5)} , Lng :{' '}
-                  {marker.position[1].toFixed(5)}
-                  <button
-                    className="ml-8 text-red-500"
-                    onClick={() => handleDeleteMarker(marker.id)}
-                  >
-                    <div className="del-button">
-                      <FaTrash className="hover:scale-110 transition-transform" />
-                    </div>
-                  </button>
-                </li>
-                <hr />
-              </>
+                  <div className="del-button">
+                    <FaTrash className="hover:scale-110 transition-transform" />
+                  </div>
+                </button>
+              </li>
             ))}
           </ul>
         </div>

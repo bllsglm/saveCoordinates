@@ -1,4 +1,6 @@
 import Map from './components/Map'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 function App() {
   return (
@@ -7,6 +9,7 @@ function App() {
         Save the Coordinates
       </h1>
       <Map />
+      <ToastContainer />
     </>
   )
 }
