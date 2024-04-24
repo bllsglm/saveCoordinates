@@ -8,5 +8,5 @@ export const apiSlice = createApi({
   baseQuery,
   tagTypes: ['Coordinate'],
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  endpoints: (builder) => ({}),
+  endpoints: (_builder) => ({}),
 })
