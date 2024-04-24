@@ -12,7 +12,7 @@ connectDB();
 const app = express()
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.VITE_NODE_ENV === 'development' ? 'http://localhost:5173' : "https://savecoordinates.onrender.com/" ,
   credentials: true,
 }));
 
